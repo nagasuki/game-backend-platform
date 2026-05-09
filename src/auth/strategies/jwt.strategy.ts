@@ -27,9 +27,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Access token has been revoked');
     }
 
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        isAdmin: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User was not found');
+    }
+
     return {
-      userId: payload.sub,
+      userId: user.id,
       email: payload.email,
+      isAdmin: user.isAdmin,
       tokenId: payload.jti,
       tokenExpiresAt: payload.exp,
     };

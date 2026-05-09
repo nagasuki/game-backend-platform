@@ -14,6 +14,7 @@ type SafeUser = {
   id: string;
   email: string;
   username: string;
+  isAdmin: boolean;
   createdAt: Date;
 };
 
@@ -21,6 +22,7 @@ const safeUserSelect = {
   id: true,
   email: true,
   username: true,
+  isAdmin: true,
   createdAt: true,
 } as const;
 
@@ -50,11 +52,15 @@ export class AuthService {
         }
 
         const passwordHash = await bcrypt.hash(registerDto.password, 10);
+        const adminCount = await this.prisma.user.count({
+          where: { isAdmin: true },
+        });
 
         const user = await this.prisma.user.create({
             data: {
                 email: registerDto.email,
                 username: registerDto.username,
+                isAdmin: adminCount === 0,
                 passwordHash,
             },
             select: safeUserSelect,
@@ -233,12 +239,14 @@ export class AuthService {
         id: string;
         email: string;
         username: string;
+        isAdmin: boolean;
         createdAt: Date;
     }): SafeUser {
         return {
             id: user.id,
             email: user.email,
             username: user.username,
+            isAdmin: user.isAdmin,
             createdAt: user.createdAt,
         };
     }
