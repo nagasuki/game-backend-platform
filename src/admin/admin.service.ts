@@ -6,14 +6,14 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCurrencyDefinitionDto } from './dto/create-currency-definition.dto';
 import {
-  CreateDailyRewardDefinitionDto,
-  DailyRewardTypeDto,
-  RewardScheduleTypeDto,
-} from './dto/create-daily-reward-definition.dto';
+  CreateScheduledRewardDefinitionDto,
+  ScheduledRewardTypeDto,
+} from './dto/create-scheduled-reward-definition.dto';
+import { RewardScheduleTypeDto } from './dto/create-scheduled-reward-definition.dto';
 import { CreateGameDto } from './dto/create-game.dto';
 import { CreateItemDefinitionDto } from './dto/create-item-definition.dto';
+import { UpdateScheduledRewardDefinitionDto } from './dto/update-scheduled-reward-definition.dto';
 import { UpdateCurrencyDefinitionDto } from './dto/update-currency-definition.dto';
-import { UpdateDailyRewardDefinitionDto } from './dto/update-daily-reward-definition.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { UpdateItemDefinitionDto } from './dto/update-item-definition.dto';
 
@@ -21,7 +21,7 @@ import { UpdateItemDefinitionDto } from './dto/update-item-definition.dto';
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly dailyRewardDefinitionSelect = {
+  private readonly scheduledRewardDefinitionSelect = {
     id: true,
     scheduleType: true,
     sequence: true,
@@ -95,7 +95,7 @@ export class AdminService {
             playerProfiles: true,
             itemDefinitions: true,
             currencyDefinitions: true,
-            dailyRewardDefinitions: true,
+            scheduledRewardDefinitions: true,
           },
         },
       },
@@ -194,7 +194,7 @@ export class AdminService {
       );
     }
 
-    const rewardUsage = await this.prisma.dailyRewardDefinition.count({
+    const rewardUsage = await this.prisma.scheduledRewardDefinition.count({
       where: { itemDefinitionId },
     });
 
@@ -283,7 +283,7 @@ export class AdminService {
       );
     }
 
-    const rewardUsage = await this.prisma.dailyRewardDefinition.count({
+    const rewardUsage = await this.prisma.scheduledRewardDefinition.count({
       where: { currencyDefinitionId },
     });
 
@@ -298,19 +298,25 @@ export class AdminService {
     });
   }
 
-  async getDailyRewardDefinitions(gameKey: string) {
+  async getScheduledRewardDefinitions(
+    gameKey: string,
+    scheduleType?: RewardScheduleTypeDto,
+  ) {
     const game = await this.findGameByKey(gameKey);
 
-    return this.prisma.dailyRewardDefinition.findMany({
-      where: { gameId: game.id },
+    return this.prisma.scheduledRewardDefinition.findMany({
+      where: {
+        gameId: game.id,
+        ...(scheduleType ? { scheduleType } : {}),
+      },
       orderBy: [{ scheduleType: 'asc' }, { sequence: 'asc' }],
-      select: this.dailyRewardDefinitionSelect,
+      select: this.scheduledRewardDefinitionSelect,
     });
   }
 
-  async createDailyRewardDefinition(dto: CreateDailyRewardDefinitionDto) {
+  async createScheduledRewardDefinition(dto: CreateScheduledRewardDefinitionDto) {
     const game = await this.findGameByKey(dto.gameKey);
-    const existingDefinition = await this.prisma.dailyRewardDefinition.findUnique({
+    const existingDefinition = await this.prisma.scheduledRewardDefinition.findUnique({
       where: {
         gameId_scheduleType_sequence: {
           gameId: game.id,
@@ -334,7 +340,7 @@ export class AdminService {
       dto.itemCode,
     );
 
-    return this.prisma.dailyRewardDefinition.create({
+    return this.prisma.scheduledRewardDefinition.create({
       data: {
         gameId: game.id,
         scheduleType: dto.scheduleType,
@@ -345,16 +351,16 @@ export class AdminService {
         itemDefinitionId: rewardTarget.itemDefinitionId,
         metadata: dto.metadata as any,
       },
-      select: this.dailyRewardDefinitionSelect,
+      select: this.scheduledRewardDefinitionSelect,
     });
   }
 
-  async updateDailyRewardDefinition(
-    dailyRewardDefinitionId: string,
-    dto: UpdateDailyRewardDefinitionDto,
+  async updateScheduledRewardDefinition(
+    scheduledRewardDefinitionId: string,
+    dto: UpdateScheduledRewardDefinitionDto,
   ) {
-    const existingDefinition = await this.prisma.dailyRewardDefinition.findUnique({
-      where: { id: dailyRewardDefinitionId },
+    const existingDefinition = await this.prisma.scheduledRewardDefinition.findUnique({
+      where: { id: scheduledRewardDefinitionId },
       select: {
         id: true,
         gameId: true,
@@ -374,7 +380,7 @@ export class AdminService {
       (dto.sequence !== undefined && dto.sequence !== existingDefinition.sequence) ||
       nextScheduleType !== existingDefinition.scheduleType
     ) {
-      const conflictingDefinition = await this.prisma.dailyRewardDefinition.findUnique({
+      const conflictingDefinition = await this.prisma.scheduledRewardDefinition.findUnique({
         where: {
           gameId_scheduleType_sequence: {
             gameId: existingDefinition.gameId,
@@ -401,8 +407,8 @@ export class AdminService {
       true,
     );
 
-    return this.prisma.dailyRewardDefinition.update({
-      where: { id: dailyRewardDefinitionId },
+    return this.prisma.scheduledRewardDefinition.update({
+      where: { id: scheduledRewardDefinitionId },
       data: {
         ...(dto.scheduleType !== undefined
           ? { scheduleType: dto.scheduleType }
@@ -420,13 +426,13 @@ export class AdminService {
           : {}),
         ...(dto.metadata !== undefined ? { metadata: dto.metadata as any } : {}),
       },
-      select: this.dailyRewardDefinitionSelect,
+      select: this.scheduledRewardDefinitionSelect,
     });
   }
 
-  async deleteDailyRewardDefinition(dailyRewardDefinitionId: string) {
-    const dailyRewardDefinition = await this.prisma.dailyRewardDefinition.findUnique({
-      where: { id: dailyRewardDefinitionId },
+  async deleteScheduledRewardDefinition(scheduledRewardDefinitionId: string) {
+    const scheduledRewardDefinition = await this.prisma.scheduledRewardDefinition.findUnique({
+      where: { id: scheduledRewardDefinitionId },
       include: {
         _count: {
           select: {
@@ -436,18 +442,18 @@ export class AdminService {
       },
     });
 
-    if (!dailyRewardDefinition) {
-      throw new NotFoundException('Daily reward definition was not found');
+    if (!scheduledRewardDefinition) {
+      throw new NotFoundException('Scheduled reward definition was not found');
     }
 
-    if (dailyRewardDefinition._count.claims > 0) {
+    if (scheduledRewardDefinition._count.claims > 0) {
       throw new ConflictException(
-        'Cannot delete a daily reward definition that already has claims',
+        'Cannot delete a scheduled reward definition that already has claims',
       );
     }
 
-    return this.prisma.dailyRewardDefinition.delete({
-      where: { id: dailyRewardDefinitionId },
+    return this.prisma.scheduledRewardDefinition.delete({
+      where: { id: scheduledRewardDefinitionId },
     });
   }
 
@@ -503,7 +509,7 @@ export class AdminService {
     itemCode?: string,
     allowNoChange = false,
   ) {
-    if (rewardType === DailyRewardTypeDto.CURRENCY) {
+    if (rewardType === ScheduledRewardTypeDto.CURRENCY) {
       if (!currencyCode) {
         if (allowNoChange && itemCode === undefined) {
           return {

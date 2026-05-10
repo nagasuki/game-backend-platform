@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '../../generated/prisma';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RewardScheduleTypeDto } from './dto/daily-reward-query.dto';
+import { RewardScheduleTypeDto } from './dto/scheduled-reward-query.dto';
 
-const dailyRewardDefinitionSelect = {
+const scheduledRewardDefinitionSelect = {
   id: true,
   scheduleType: true,
   sequence: true,
@@ -32,15 +32,15 @@ const dailyRewardDefinitionSelect = {
   },
 } as const;
 
-type RewardDefinition = Prisma.DailyRewardDefinitionGetPayload<{
-  select: typeof dailyRewardDefinitionSelect;
+type ScheduledRewardDefinition = Prisma.ScheduledRewardDefinitionGetPayload<{
+  select: typeof scheduledRewardDefinitionSelect;
 }>;
 
 @Injectable()
-export class DailyRewardsService {
+export class ScheduledRewardsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMyDailyRewards(
+  async getMyScheduledRewards(
     userId: string,
     gameKey: string,
     scheduleType: RewardScheduleTypeDto,
@@ -64,7 +64,7 @@ export class DailyRewardsService {
       select: {
         id: true,
         displayName: true,
-        dailyRewardProgress: {
+        scheduledRewardProgress: {
           where: {
             scheduleType,
           },
@@ -80,7 +80,7 @@ export class DailyRewardsService {
       },
     });
 
-    const progress = playerProfile?.dailyRewardProgress[0] ?? null;
+    const progress = playerProfile?.scheduledRewardProgress[0] ?? null;
     const currentPeriodStart = this.getPeriodStart(new Date(), scheduleType);
     const alreadyClaimedCurrentPeriod =
       this.isSameTimestamp(progress?.lastClaimedPeriodStart, currentPeriodStart);
@@ -125,7 +125,7 @@ export class DailyRewardsService {
     };
   }
 
-  async claimDailyReward(
+  async claimScheduledReward(
     userId: string,
     gameKey: string,
     scheduleType: RewardScheduleTypeDto,
@@ -168,7 +168,7 @@ export class DailyRewardsService {
         });
       }
 
-      const existingProgress = await tx.dailyRewardProgress.findUnique({
+      const existingProgress = await tx.scheduledRewardProgress.findUnique({
         where: {
           playerProfileId_scheduleType: {
             playerProfileId: playerProfile.id,
@@ -212,10 +212,10 @@ export class DailyRewardsService {
 
       await this.grantReward(tx, playerProfile.id, rewardDefinition);
 
-      await tx.dailyRewardClaim.create({
+      await tx.scheduledRewardClaim.create({
         data: {
           playerProfileId: playerProfile.id,
-          dailyRewardDefinitionId: rewardDefinition.id,
+          scheduledRewardDefinitionId: rewardDefinition.id,
           scheduleType,
           claimedPeriodStart: currentPeriodStart,
           streakStep: nextStreak,
@@ -223,7 +223,7 @@ export class DailyRewardsService {
       });
 
       const progress = existingProgress
-        ? await tx.dailyRewardProgress.update({
+        ? await tx.scheduledRewardProgress.update({
             where: {
               playerProfileId_scheduleType: {
                 playerProfileId: playerProfile.id,
@@ -239,7 +239,7 @@ export class DailyRewardsService {
               lastClaimedPeriodStart: currentPeriodStart,
             },
           })
-        : await tx.dailyRewardProgress.create({
+        : await tx.scheduledRewardProgress.create({
             data: {
               playerProfileId: playerProfile.id,
               scheduleType,
@@ -269,14 +269,85 @@ export class DailyRewardsService {
     });
   }
 
+  async getMyRewardHistory(
+    userId: string,
+    gameKey: string,
+    scheduleType: RewardScheduleTypeDto,
+    limit = 10,
+  ) {
+    const game = await this.findActiveGameByKey(gameKey);
+    const playerProfile = await this.prisma.playerProfile.findUnique({
+      where: {
+        userId_gameId: {
+          userId,
+          gameId: game.id,
+        },
+      },
+      select: {
+        id: true,
+        displayName: true,
+      },
+    });
+
+    if (!playerProfile) {
+      return {
+        game: {
+          id: game.id,
+          key: game.key,
+          name: game.name,
+        },
+        scheduleType,
+        playerProfile: null,
+        claims: [],
+      };
+    }
+
+    const claims = await this.prisma.scheduledRewardClaim.findMany({
+      where: {
+        playerProfileId: playerProfile.id,
+        scheduleType,
+      },
+      orderBy: {
+        claimedAt: 'desc',
+      },
+      take: limit,
+      select: {
+        id: true,
+        scheduleType: true,
+        claimedAt: true,
+        claimedPeriodStart: true,
+        streakStep: true,
+        scheduledRewardDefinition: {
+          select: scheduledRewardDefinitionSelect,
+        },
+      },
+    });
+
+    return {
+      game: {
+        id: game.id,
+        key: game.key,
+        name: game.name,
+      },
+      scheduleType,
+      playerProfile: {
+        id: playerProfile.id,
+        displayName: playerProfile.displayName,
+      },
+      claims,
+    };
+  }
+
   private async grantReward(
     tx: Prisma.TransactionClient,
     playerProfileId: string,
-    rewardDefinition: RewardDefinition,
+    rewardDefinition: ScheduledRewardDefinition,
   ) {
     if (rewardDefinition.rewardType === 'CURRENCY') {
       if (!rewardDefinition.currencyDefinition) {
-        throw new BadRequestException('Scheduled reward currency definition is missing');
+        throw new BadRequestException(
+          'Scheduled reward currency definition is missing',
+        );
       }
 
       const existingBalance = await tx.currencyBalance.findUnique({
@@ -357,7 +428,7 @@ export class DailyRewardsService {
     gameId: string,
     scheduleType: RewardScheduleTypeDto,
   ) {
-    return this.prisma.dailyRewardDefinition.findMany({
+    return this.prisma.scheduledRewardDefinition.findMany({
       where: {
         gameId,
         scheduleType,
@@ -365,7 +436,7 @@ export class DailyRewardsService {
       orderBy: {
         sequence: 'asc',
       },
-      select: dailyRewardDefinitionSelect,
+      select: scheduledRewardDefinitionSelect,
     });
   }
 

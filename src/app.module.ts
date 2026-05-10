@@ -7,7 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { CurrencyModule } from './currency/currency.module';
 import { AdminModule } from './admin/admin.module';
-import { DailyRewardsModule } from './daily-rewards/daily-rewards.module';
+import { ScheduledRewardsModule } from './scheduled-rewards/scheduled-rewards.module';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { DailyRewardsModule } from './daily-rewards/daily-rewards.module';
     InventoryModule,
     CurrencyModule,
     AdminModule,
-    DailyRewardsModule,
+    ScheduledRewardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

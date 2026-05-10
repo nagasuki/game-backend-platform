@@ -247,7 +247,7 @@ async function main() {
   ];
 
   for (const reward of scheduledRewardDefinitions) {
-    await prisma.dailyRewardDefinition.upsert({
+    await prisma.scheduledRewardDefinition.upsert({
       where: {
         gameId_scheduleType_sequence: {
           gameId: game.id,

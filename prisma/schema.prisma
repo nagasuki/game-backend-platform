@@ -39,7 +39,7 @@ model Game {
   playerProfiles  PlayerProfile[]
   itemDefinitions ItemDefinition[]
   currencyDefinitions CurrencyDefinition[]
-  dailyRewardDefinitions DailyRewardDefinition[]
+  scheduledRewardDefinitions ScheduledRewardDefinition[]
 }
 
 model PlayerProfile {
@@ -54,8 +54,8 @@ model PlayerProfile {
   game             Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   inventoryEntries InventoryEntry[]
   currencyBalances CurrencyBalance[]
-  dailyRewardProgress DailyRewardProgress[]
-  dailyRewardClaims DailyRewardClaim[]
+  scheduledRewardProgress ScheduledRewardProgress[]
+  scheduledRewardClaims ScheduledRewardClaim[]
 
   @@unique([userId, gameId])
 }
@@ -72,7 +72,7 @@ model ItemDefinition {
   updatedAt        DateTime         @updatedAt
   game             Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   inventoryEntries InventoryEntry[]
-  dailyRewardDefinitions DailyRewardDefinition[]
+  scheduledRewardDefinitions ScheduledRewardDefinition[]
 
   @@unique([gameId, code])
 }
@@ -101,7 +101,7 @@ model CurrencyDefinition {
   updatedAt        DateTime          @updatedAt
   game             Game              @relation(fields: [gameId], references: [id], onDelete: Cascade)
   currencyBalances CurrencyBalance[]
-  dailyRewardDefinitions DailyRewardDefinition[]
+  scheduledRewardDefinitions ScheduledRewardDefinition[]
 
   @@unique([gameId, code])
 }
@@ -119,7 +119,7 @@ model CurrencyBalance {
   @@unique([playerProfileId, currencyDefinitionId])
 }
 
-enum DailyRewardType {
+enum ScheduledRewardType {
   CURRENCY
   ITEM
 }
@@ -130,12 +130,12 @@ enum RewardScheduleType {
   YEARLY
 }
 
-model DailyRewardDefinition {
+model ScheduledRewardDefinition {
   id                   String              @id @default(uuid())
   gameId               String
   scheduleType         RewardScheduleType
   sequence             Int
-  rewardType           DailyRewardType
+  rewardType           ScheduledRewardType
   amount               Int
   currencyDefinitionId String?
   itemDefinitionId     String?
@@ -145,12 +145,12 @@ model DailyRewardDefinition {
   game                 Game                @relation(fields: [gameId], references: [id], onDelete: Cascade)
   currencyDefinition   CurrencyDefinition? @relation(fields: [currencyDefinitionId], references: [id], onDelete: Restrict)
   itemDefinition       ItemDefinition?     @relation(fields: [itemDefinitionId], references: [id], onDelete: Restrict)
-  claims               DailyRewardClaim[]
+  claims               ScheduledRewardClaim[]
 
   @@unique([gameId, scheduleType, sequence])
 }
 
-model DailyRewardProgress {
+model ScheduledRewardProgress {
   id                     String             @id @default(uuid())
   playerProfileId        String
   scheduleType           RewardScheduleType
@@ -165,17 +165,17 @@ model DailyRewardProgress {
   @@unique([playerProfileId, scheduleType])
 }
 
-model DailyRewardClaim {
-  id                      String                @id @default(uuid())
-  playerProfileId         String
-  dailyRewardDefinitionId String
-  scheduleType            RewardScheduleType
-  claimedPeriodStart      DateTime
-  streakStep              Int
-  claimedAt               DateTime              @default(now())
-  createdAt               DateTime              @default(now())
-  playerProfile           PlayerProfile         @relation(fields: [playerProfileId], references: [id], onDelete: Cascade)
-  dailyRewardDefinition   DailyRewardDefinition @relation(fields: [dailyRewardDefinitionId], references: [id], onDelete: Cascade)
+model ScheduledRewardClaim {
+  id                        String                    @id @default(uuid())
+  playerProfileId           String
+  scheduledRewardDefinitionId String
+  scheduleType              RewardScheduleType
+  claimedPeriodStart        DateTime
+  streakStep                Int
+  claimedAt                 DateTime                  @default(now())
+  createdAt                 DateTime                  @default(now())
+  playerProfile             PlayerProfile             @relation(fields: [playerProfileId], references: [id], onDelete: Cascade)
+  scheduledRewardDefinition ScheduledRewardDefinition @relation(fields: [scheduledRewardDefinitionId], references: [id], onDelete: Cascade)
 
   @@unique([playerProfileId, scheduleType, claimedPeriodStart])
 }

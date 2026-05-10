@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsString, MinLength } from 'class-validator';
-import { RewardScheduleTypeDto } from './daily-reward-query.dto';
+import { RewardScheduleTypeDto } from './scheduled-reward-query.dto';
 
-export class ClaimDailyRewardDto {
+export class ClaimScheduledRewardDto {
   @ApiProperty({ example: 'rpg-01' })
   @IsString()
   @MinLength(1)

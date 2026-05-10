@@ -9,7 +9,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export enum DailyRewardTypeDto {
+export enum ScheduledRewardTypeDto {
   CURRENCY = 'CURRENCY',
   ITEM = 'ITEM',
 }
@@ -20,7 +20,7 @@ export enum RewardScheduleTypeDto {
   YEARLY = 'YEARLY',
 }
 
-export class CreateDailyRewardDefinitionDto {
+export class CreateScheduledRewardDefinitionDto {
   @ApiProperty({ example: 'rpg-01' })
   @IsString()
   @MinLength(1)
@@ -35,9 +35,12 @@ export class CreateDailyRewardDefinitionDto {
   @Min(1)
   sequence: number;
 
-  @ApiProperty({ enum: DailyRewardTypeDto, example: DailyRewardTypeDto.CURRENCY })
-  @IsEnum(DailyRewardTypeDto)
-  rewardType: DailyRewardTypeDto;
+  @ApiProperty({
+    enum: ScheduledRewardTypeDto,
+    example: ScheduledRewardTypeDto.CURRENCY,
+  })
+  @IsEnum(ScheduledRewardTypeDto)
+  rewardType: ScheduledRewardTypeDto;
 
   @ApiProperty({ example: 100 })
   @IsInt()

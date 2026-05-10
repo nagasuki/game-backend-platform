@@ -7,7 +7,7 @@ export enum RewardScheduleTypeDto {
   YEARLY = 'YEARLY',
 }
 
-export class DailyRewardQueryDto {
+export class ScheduledRewardQueryDto {
   @ApiProperty({ example: 'rpg-01' })
   @IsString()
   @MinLength(1)

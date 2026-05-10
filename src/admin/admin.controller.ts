@@ -13,15 +13,16 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AdminService } from './admin.service';
-import { CreateDailyRewardDefinitionDto } from './dto/create-daily-reward-definition.dto';
 import { CreateCurrencyDefinitionDto } from './dto/create-currency-definition.dto';
 import { CreateGameDto } from './dto/create-game.dto';
 import { CreateItemDefinitionDto } from './dto/create-item-definition.dto';
 import { GameScopedQueryDto } from './dto/game-scoped-query.dto';
-import { UpdateDailyRewardDefinitionDto } from './dto/update-daily-reward-definition.dto';
+import { CreateScheduledRewardDefinitionDto } from './dto/create-scheduled-reward-definition.dto';
+import { ScheduledRewardDefinitionQueryDto } from './dto/scheduled-reward-definition-query.dto';
 import { UpdateCurrencyDefinitionDto } from './dto/update-currency-definition.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { UpdateItemDefinitionDto } from './dto/update-item-definition.dto';
+import { UpdateScheduledRewardDefinitionDto } from './dto/update-scheduled-reward-definition.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -110,35 +111,38 @@ export class AdminController {
     return this.adminService.deleteCurrencyDefinition(currencyDefinitionId);
   }
 
-  @ApiOperation({ summary: 'List daily reward definitions for a game' })
-  @Get('daily-rewards')
-  getDailyRewardDefinitions(@Query() query: GameScopedQueryDto) {
-    return this.adminService.getDailyRewardDefinitions(query.gameKey);
+  @ApiOperation({ summary: 'List scheduled reward definitions for a game' })
+  @Get('scheduled-rewards')
+  getScheduledRewardDefinitions(@Query() query: ScheduledRewardDefinitionQueryDto) {
+    return this.adminService.getScheduledRewardDefinitions(
+      query.gameKey,
+      query.scheduleType,
+    );
   }
 
-  @ApiOperation({ summary: 'Create a daily reward definition' })
-  @Post('daily-rewards')
-  createDailyRewardDefinition(@Body() dto: CreateDailyRewardDefinitionDto) {
-    return this.adminService.createDailyRewardDefinition(dto);
+  @ApiOperation({ summary: 'Create a scheduled reward definition' })
+  @Post('scheduled-rewards')
+  createScheduledRewardDefinition(@Body() dto: CreateScheduledRewardDefinitionDto) {
+    return this.adminService.createScheduledRewardDefinition(dto);
   }
 
-  @ApiOperation({ summary: 'Update a daily reward definition' })
-  @Patch('daily-rewards/:dailyRewardDefinitionId')
-  updateDailyRewardDefinition(
-    @Param('dailyRewardDefinitionId') dailyRewardDefinitionId: string,
-    @Body() dto: UpdateDailyRewardDefinitionDto,
+  @ApiOperation({ summary: 'Update a scheduled reward definition' })
+  @Patch('scheduled-rewards/:scheduledRewardDefinitionId')
+  updateScheduledRewardDefinition(
+    @Param('scheduledRewardDefinitionId') scheduledRewardDefinitionId: string,
+    @Body() dto: UpdateScheduledRewardDefinitionDto,
   ) {
-    return this.adminService.updateDailyRewardDefinition(
-      dailyRewardDefinitionId,
+    return this.adminService.updateScheduledRewardDefinition(
+      scheduledRewardDefinitionId,
       dto,
     );
   }
 
-  @ApiOperation({ summary: 'Delete a daily reward definition' })
-  @Delete('daily-rewards/:dailyRewardDefinitionId')
-  deleteDailyRewardDefinition(
-    @Param('dailyRewardDefinitionId') dailyRewardDefinitionId: string,
+  @ApiOperation({ summary: 'Delete a scheduled reward definition' })
+  @Delete('scheduled-rewards/:scheduledRewardDefinitionId')
+  deleteScheduledRewardDefinition(
+    @Param('scheduledRewardDefinitionId') scheduledRewardDefinitionId: string,
   ) {
-    return this.adminService.deleteDailyRewardDefinition(dailyRewardDefinitionId);
+    return this.adminService.deleteScheduledRewardDefinition(scheduledRewardDefinitionId);
   }
 }
